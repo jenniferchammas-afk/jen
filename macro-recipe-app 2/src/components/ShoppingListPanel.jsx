@@ -1,30 +1,7 @@
 import { useState } from 'react'
 import { shoppingListToText } from '../lib/shoppingList.js'
 
-export default function ShoppingListPanel({ tabs }) {
-  const [activeTab, setActiveTab] = useState(tabs[0]?.key || 'combined')
-  const current = tabs.find((t) => t.key === activeTab) || tabs[0]
-
-  return (
-    <div className="panel shopping-list">
-      <h2>Shopping list</h2>
-      <div className="shopping-tabs">
-        {tabs.map((t) => (
-          <button
-            key={t.key}
-            className={activeTab === t.key ? 'active' : ''}
-            onClick={() => setActiveTab(t.key)}
-          >
-            {t.label}{t.list.length > 0 ? ` (${t.list.length})` : ''}
-          </button>
-        ))}
-      </div>
-      <ShoppingListView list={current.list} />
-    </div>
-  )
-}
-
-function ShoppingListView({ list }) {
+export default function ShoppingListPanel({ list }) {
   const [copied, setCopied] = useState(false)
   const text = shoppingListToText(list)
 
@@ -39,12 +16,18 @@ function ShoppingListView({ list }) {
   }
 
   if (list.length === 0) {
-    return <p className="muted">Select recipes above to build this list.</p>
+    return (
+      <div className="panel shopping-list">
+        <h2>Shopping list</h2>
+        <p className="muted">Select recipes above to build your list.</p>
+      </div>
+    )
   }
 
   return (
-    <div>
-      <div className="row" style={{ justifyContent: 'flex-end', marginBottom: 8 }}>
+    <div className="panel shopping-list">
+      <div className="row" style={{ justifyContent: 'space-between' }}>
+        <h2>Shopping list</h2>
         <button onClick={handleCopy}>{copied ? 'Copied!' : 'Copy list'}</button>
       </div>
       <ul>

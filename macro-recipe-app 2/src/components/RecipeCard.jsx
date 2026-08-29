@@ -1,5 +1,6 @@
-export default function RecipeCard({ recipe, profiles, onToggle, onMultiplierChange, onOwnerChange, onRemove }) {
+export default function RecipeCard({ recipe, onToggle, onServingsChange, onRemove }) {
   const m = recipe.macros_per_serving || {}
+  const nativeServings = recipe.servings || 1
   return (
     <div className={`recipe-card ${recipe.selected ? 'selected' : ''}`}>
       <div className="recipe-card-header">
@@ -20,7 +21,9 @@ export default function RecipeCard({ recipe, profiles, onToggle, onMultiplierCha
       {recipe.instructions_summary && <p className="summary">{recipe.instructions_summary}</p>}
 
       <details>
-        <summary>{recipe.ingredients?.length || 0} ingredients</summary>
+        <summary>
+          {recipe.ingredients?.length || 0} ingredients (recipe makes {nativeServings} serving{nativeServings === 1 ? '' : 's'})
+        </summary>
         <ul>
           {recipe.ingredients?.map((ing, i) => (
             <li key={i}>
@@ -33,25 +36,18 @@ export default function RecipeCard({ recipe, profiles, onToggle, onMultiplierCha
 
       <div className="row wrap">
         <label className="multiplier-label">
-          Servings to make:
+          Servings needed:
           <input
             type="number"
             min="0.5"
             step="0.5"
-            value={recipe.multiplier}
-            onChange={(e) => onMultiplierChange(recipe.id, Number(e.target.value))}
+            value={recipe.desiredServings}
+            onChange={(e) => onServingsChange(recipe.id, Number(e.target.value))}
           />
         </label>
-        {profiles && onOwnerChange && (
-          <label className="multiplier-label">
-            For:
-            <select value={recipe.owner} onChange={(e) => onOwnerChange(recipe.id, e.target.value)}>
-              {profiles.map((p) => (
-                <option key={p.key} value={p.key}>{p.label}</option>
-              ))}
-            </select>
-          </label>
-        )}
+        <span className="muted" style={{ fontSize: 13 }}>
+          (recipe makes {nativeServings})
+        </span>
         {recipe.source_url && (
           <a href={recipe.source_url} target="_blank" rel="noreferrer" className="source-link">
             View source

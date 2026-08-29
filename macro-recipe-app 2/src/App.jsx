@@ -8,24 +8,18 @@ import './App.css'
 
 let nextId = 1
 
-const PROFILES = [
-  { key: 'jennifer', label: 'Jennifer' },
-  { key: 'dino', label: 'Dino' },
-]
-
 export default function App() {
   const [mode, setMode] = useState('link') // 'link' | 'browse'
-  const [activeProfile, setActiveProfile] = useState('jennifer')
   const [recipes, setRecipes] = useState([])
 
   function addRecipe(recipe, selected = true) {
-    setRecipes((rs) => [...rs, { ...recipe, id: nextId++, selected, multiplier: 1, owner: activeProfile }])
+    setRecipes((rs) => [...rs, { ...recipe, id: nextId++, selected, desiredServings: recipe.servings || 1 }])
   }
 
   function addRecipes(newRecipes) {
     setRecipes((rs) => [
       ...rs,
-      ...newRecipes.map((r) => ({ ...r, id: nextId++, selected: false, multiplier: 1, owner: activeProfile })),
+      ...newRecipes.map((r) => ({ ...r, id: nextId++, selected: false, desiredServings: r.servings || 1 })),
     ])
   }
 
@@ -33,12 +27,8 @@ export default function App() {
     setRecipes((rs) => rs.map((r) => (r.id === id ? { ...r, selected: !r.selected } : r)))
   }
 
-  function setMultiplier(id, value) {
-    setRecipes((rs) => rs.map((r) => (r.id === id ? { ...r, multiplier: value } : r)))
-  }
-
-  function setOwner(id, owner) {
-    setRecipes((rs) => rs.map((r) => (r.id === id ? { ...r, owner } : r)))
+  function setDesiredServings(id, value) {
+    setRecipes((rs) => rs.map((r) => (r.id === id ? { ...r, desiredServings: value } : r)))
   }
 
   function removeRecipe(id) {
@@ -47,15 +37,15 @@ export default function App() {
 
   const selectedRecipes = useMemo(() => recipes.filter((r) => r.selected), [recipes])
 
-  const shoppingTabs = useMemo(
-    () => [
-      { key: 'combined', label: 'Combined', list: buildShoppingList(selectedRecipes) },
-      ...PROFILES.map((p) => ({
-        key: p.key,
-        label: p.label,
-        list: buildShoppingList(selectedRecipes.filter((r) => r.owner === p.key)),
-      })),
-    ],
+  const shoppingList = useMemo(
+    () =>
+      buildShoppingList(
+        selectedRecipes.map((r) => ({
+          ...r,
+          // scale ingredient quantities: how many servings we want vs. how many the recipe naturally makes
+          multiplier: (r.desiredServings || 1) / (r.servings || 1),
+        }))
+      ),
     [selectedRecipes]
   )
 
@@ -65,19 +55,6 @@ export default function App() {
         <h1>Macro Recipe Shopper</h1>
         <p className="muted">Find recipes, build a shopping list, then take it to Waitrose on Deliveroo.</p>
       </header>
-
-      <div className="profile-toggle">
-        <span className="muted" style={{ marginRight: 8 }}>Adding recipes for:</span>
-        {PROFILES.map((p) => (
-          <button
-            key={p.key}
-            className={activeProfile === p.key ? 'active' : ''}
-            onClick={() => setActiveProfile(p.key)}
-          >
-            {p.label}
-          </button>
-        ))}
-      </div>
 
       <div className="mode-toggle">
         <button className={mode === 'link' ? 'active' : ''} onClick={() => setMode('link')}>
@@ -96,32 +73,22 @@ export default function App() {
 
       {recipes.length > 0 && (
         <section>
-          {PROFILES.map((p) => {
-            const ownedRecipes = recipes.filter((r) => r.owner === p.key)
-            if (ownedRecipes.length === 0) return null
-            return (
-              <div key={p.key} className="profile-section">
-                <h2>{p.label}'s recipes ({ownedRecipes.length})</h2>
-                <div className="recipe-grid">
-                  {ownedRecipes.map((r) => (
-                    <RecipeCard
-                      key={r.id}
-                      recipe={r}
-                      profiles={PROFILES}
-                      onToggle={toggleRecipe}
-                      onMultiplierChange={setMultiplier}
-                      onOwnerChange={setOwner}
-                      onRemove={removeRecipe}
-                    />
-                  ))}
-                </div>
-              </div>
-            )
-          })}
+          <h2>Recipes ({recipes.length})</h2>
+          <div className="recipe-grid">
+            {recipes.map((r) => (
+              <RecipeCard
+                key={r.id}
+                recipe={r}
+                onToggle={toggleRecipe}
+                onServingsChange={setDesiredServings}
+                onRemove={removeRecipe}
+              />
+            ))}
+          </div>
         </section>
       )}
 
-      <ShoppingListPanel tabs={shoppingTabs} />
+      <ShoppingListPanel list={shoppingList} />
 
       <footer className="muted">
         <p>

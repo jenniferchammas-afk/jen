@@ -21,22 +21,23 @@ It does **not** place the Deliveroo/Waitrose order automatically yet — see
 - **Browse by macros** → a second function asks Claude to suggest recipes
   that hit your calorie/protein/carb/fat targets.
 - Both return recipes in the same shape, so the frontend treats them
-  identically: you tick the ones you want, adjust "servings to make" if
-  you're batch cooking, and the shopping list panel merges everything.
+  identically: you tick the ones you want, set "servings needed" if you
+  want more or fewer than the recipe naturally makes, and the shopping
+  list panel merges everything, scaled accordingly.
 
-## Two people, two macro targets
+## Scaling servings
 
-There's a "Adding recipes for: Jennifer / Dino" toggle above the recipe
-forms. Whichever name is selected when you paste a link or generate
-suggestions, that's who the recipe gets tagged to (you can also reassign an
-individual recipe afterwards from the "For:" dropdown on its card).
+Each recipe card shows "Servings needed" (defaults to however many
+servings the recipe/extraction says it makes). Change that number — say to
+4 — and every ingredient quantity for that recipe is scaled by
+`servings needed ÷ recipe's native servings` before it goes into the
+shopping list. Two recipes both scaled up like this still merge into one
+combined line per ingredient.
 
-Recipes are grouped on screen by person, and the shopping list panel has
-three tabs: **Jennifer**, **Dino**, and **Combined** — the first two are
-each person's own list (built only from their selected recipes), and
-Combined merges both, the same way you'd want it when you're actually
-shopping together.
-
+One caveat: if a recipe's native serving count couldn't be determined (a
+page didn't state it, or Claude's suggestion left it out), it's treated as
+1 serving — so double-check the "(recipe makes N)" note next to the input
+before scaling, or the quantities will be off.
 
 ## Prerequisites
 
@@ -73,6 +74,15 @@ features work locally.
 3. In **Site settings → Environment variables**, add `ANTHROPIC_API_KEY`
    with your key.
 4. Deploy. That's it — no database, no other backend.
+
+### Updating your live site after this
+
+Your site is already deployed this way, from the `jen` GitHub repo. To push
+a change: go to that repo on github.com, open the `macro-recipe-app 2`
+folder, use **Add file → Upload files**, and drag the same folder back in —
+GitHub treats files at matching paths as an update, not a duplicate. Commit,
+and Netlify automatically rebuilds and redeploys within a minute or two,
+since the site is connected to that repo.
 
 ## A couple of known rough edges (v1, on purpose)
 
