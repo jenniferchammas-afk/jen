@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { shoppingListToText } from '../lib/shoppingList.js'
+import { shoppingListToText, groupByCategory } from '../lib/shoppingList.js'
 
 export default function ShoppingListPanel({ list }) {
   const [copied, setCopied] = useState(false)
@@ -30,21 +30,26 @@ export default function ShoppingListPanel({ list }) {
         <h2>Shopping list</h2>
         <button onClick={handleCopy}>{copied ? 'Copied!' : 'Copy list'}</button>
       </div>
-      <ul>
-        {list.map((item) => (
-          <li key={item.key}>
-            <strong>{item.displayName}</strong>
-            {item.lines.map((line, i) => (
-              <span key={i} className="line-detail">
-                {' — '}
-                {line.quantity !== null ? `${roundDisplay(line.quantity)}${line.unit ? line.unit : ''}` : 'amount not specified'}
-                {' '}
-                <span className="muted">({line.sources.join(', ')})</span>
-              </span>
+      {groupByCategory(list).map(([category, items]) => (
+        <div className="category-group" key={category}>
+          <h3 className="category-heading">{category}</h3>
+          <ul>
+            {items.map((item) => (
+              <li key={item.key}>
+                <strong>{item.displayName}</strong>
+                {item.lines.map((line, i) => (
+                  <span key={i} className="line-detail">
+                    {' — '}
+                    {line.quantity !== null ? `${roundDisplay(line.quantity)}${line.unit ? line.unit : ''}` : 'amount not specified'}
+                    {' '}
+                    <span className="muted">({line.sources.join(', ')})</span>
+                  </span>
+                ))}
+              </li>
             ))}
-          </li>
-        ))}
-      </ul>
+          </ul>
+        </div>
+      ))}
       <textarea readOnly value={text} rows={Math.min(list.length + 2, 16)} />
     </div>
   )

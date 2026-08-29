@@ -154,6 +154,24 @@ button:disabled {
   font-size: 13px;
 }
 
+.category-group {
+  margin-bottom: 16px;
+}
+
+.category-group:last-child {
+  margin-bottom: 0;
+}
+
+.category-heading {
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  margin: 0 0 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--line);
+}
+
 .shopping-list ul {
   padding-left: 18px;
 }
