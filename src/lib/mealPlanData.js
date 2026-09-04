@@ -54,18 +54,25 @@ export const BREAKFASTS = [
   },
   {
     id: 'bf-banana-bread',
-    title: 'High-Protein Banana Bread',
-    servings: 8,
+    title: 'Cottage Cheese Banana Bread',
+    servings: 12,
     ingredients: [
-      { name: 'banana', quantity: 2, unit: 'medium' },
-      { name: 'milk', quantity: 1, unit: 'cup' },
-      { name: 'self rising flour', quantity: 2, unit: 'cup' },
-      { name: 'almond flour', quantity: 0.5, unit: 'cup' },
-      { name: 'protein powder', quantity: 0.25, unit: 'cup' },
+      { name: 'banana', quantity: 3, unit: 'medium' },
+      { name: 'coconut sugar', quantity: 90, unit: 'g' },
+      { name: 'coconut oil', quantity: 90, unit: 'ml' },
+      { name: 'egg', quantity: 2, unit: null },
+      { name: 'cottage cheese', quantity: 150, unit: 'g' },
+      { name: 'hemp hearts', quantity: 4, unit: 'tbsp' },
+      { name: 'vanilla extract', quantity: 1, unit: 'tsp' },
+      { name: 'all-purpose flour', quantity: 210, unit: 'g' },
+      { name: 'baking soda', quantity: 1, unit: 'tsp' },
+      { name: 'ground cinnamon', quantity: 1, unit: 'tsp' },
+      { name: 'pecans', quantity: 2, unit: 'tbsp' },
     ],
-    macros_per_serving: { calories: 196, protein_g: 25, carbs_g: 21, fat_g: 5, estimated: false },
-    instructions_summary: 'Mix wet and dry ingredients separately, combine, and bake as a loaf. Macros are per slice.',
-    source_url: 'https://thebigmansworld.com/protein-banana-bread/',
+    macros_per_serving: { calories: 235, protein_g: 5, carbs_g: 29, fat_g: 11, estimated: false },
+    instructions_summary:
+      'From "The Energy Upgrade" 15 Meals Recipe Pack. Mash the bananas and beat with the coconut sugar, coconut oil, eggs, cottage cheese, hemp hearts and vanilla until smooth. In a separate bowl whisk the flour, baking soda and cinnamon, then fold into the wet mixture. Pour into a lined loaf tin, scatter the chopped pecans on top, and bake at 175°C (350°F) for 55–60 minutes, until a skewer comes out clean. Macros are per slice (makes 12).',
+    source_url: null,
   },
   {
     id: 'bf-yogurt',
@@ -118,11 +125,12 @@ export const MAINS = [
       { name: 'olive oil', quantity: 2, unit: 'tsp' },
       { name: 'lettuce', quantity: 1, unit: 'head' },
       { name: 'guacamole', quantity: 120, unit: 'g' },
+      { name: 'coriander', quantity: 15, unit: 'g' },
       { name: 'cumin', quantity: 2, unit: 'tsp' },
       { name: 'chili powder', quantity: 1, unit: 'tsp' },
     ],
     macros_per_serving: { calories: 285, protein_g: 29, carbs_g: 13, fat_g: 12, estimated: true },
-    instructions_summary: 'Sauté spiced chicken strips with peppers and onion, serve in lettuce cups topped with guacamole — the avocado is the only added fat.',
+    instructions_summary: 'Sauté spiced chicken strips with peppers and onion, serve in lettuce cups topped with guacamole and a scatter of fresh coriander — the avocado is the only added fat.',
     source_url: null,
   },
   {
@@ -192,7 +200,7 @@ export const MAINS = [
     title: 'Lettuce Burgers',
     servings: 4,
     ingredients: [
-      { name: 'lean ground beef (93%)', quantity: 800, unit: 'g' },
+      { name: 'lean ground beef', quantity: 800, unit: 'g' },
       { name: 'lettuce', quantity: 1, unit: 'head' },
       { name: 'tomato', quantity: 1, unit: null },
       { name: 'red onion', quantity: 0.5, unit: null },
@@ -202,7 +210,7 @@ export const MAINS = [
     ],
     macros_per_serving: { calories: 375, protein_g: 48.5, carbs_g: 7, fat_g: 16, estimated: true },
     instructions_summary:
-      'Grill lean beef patties, wrap in whole lettuce leaves instead of a bun, and build up with tomato, red onion, pickles, mustard and ketchup. Add a slice of cheese for Dino\'s portion if he wants more fat/calories.',
+      'Grill lean (93%) beef patties, wrap in whole lettuce leaves instead of a bun, and build up with tomato, red onion, pickles, mustard and ketchup. Add a slice of cheese for Dino\'s portion if he wants more fat/calories.',
     source_url: null,
   },
 ]
@@ -213,7 +221,8 @@ export const EAT_OUT = {
   servings: 1,
   ingredients: [],
   macros_per_serving: { calories: null, protein_g: null, carbs_g: null, fat_g: null, estimated: true },
-  instructions_summary: 'Not tracked — logged as a placeholder so the day still shows the rest of your macros.',
+  instructions_summary:
+    "Counted as hitting your own per-meal macro target rather than a specific tracked dish, so the day's bars still fill up correctly — Jennifer's and Dino's eat-out macros are each based on their own targets, not a shared number.",
   source_url: null,
 }
 

@@ -30,20 +30,40 @@ export default function ShoppingListPanel({ list }) {
         <h2>Shopping list</h2>
         <button onClick={handleCopy}>{copied ? 'Copied!' : 'Copy list'}</button>
       </div>
+
+      <div className="shopping-legend">
+        <span className="ingredient-tag staple">Staple</span> probably already in the kitchen —
+        <span className="ingredient-tag variable">Pick up</span> fresh/variable, worth buying every time.
+      </div>
+
       {groupByCategory(list).map(([category, items]) => (
         <div className="category-group" key={category}>
           <h3 className="category-heading">{category}</h3>
           <ul>
             {items.map((item) => (
               <li key={item.key}>
-                <strong>{item.displayName}</strong>
+                <div className="ingredient-line">
+                  <strong>{item.displayName}</strong>
+                  {item.staple !== null && (
+                    <span className={`ingredient-tag ${item.staple ? 'staple' : 'variable'}`}>
+                      {item.staple ? 'Staple' : 'Pick up'}
+                    </span>
+                  )}
+                </div>
                 {item.lines.map((line, i) => (
-                  <span key={i} className="line-detail">
-                    {' — '}
+                  <div key={i} className="line-detail">
                     {line.quantity !== null ? `${roundDisplay(line.quantity)}${line.unit ? line.unit : ''}` : 'amount not specified'}
                     {' '}
                     <span className="muted">({line.sources.join(', ')})</span>
-                  </span>
+                    {line.waitrose && (
+                      <span className="waitrose-match">
+                        {' → '}
+                        {line.waitrose.packs ? `${line.waitrose.packs} x ` : ''}
+                        {line.waitrose.product}
+                        {line.waitrose.note && <span className="waitrose-note"> — {line.waitrose.note}</span>}
+                      </span>
+                    )}
+                  </div>
                 ))}
               </li>
             ))}

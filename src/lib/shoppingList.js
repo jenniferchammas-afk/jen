@@ -6,7 +6,12 @@
 // different units for the same ingredient are kept as separate lines
 // (unit conversion is a rabbit hole we're deliberately skipping for v1).
 // Each ingredient is also tagged with a rough grocery category so the
-// list can be shown grouped the way you'd actually shop.
+// list can be shown grouped the way you'd actually shop, plus (where we
+// have a match) the real Waitrose product to add to the basket and
+// whether it's a pantry "staple" Mira likely already has vs a "variable"
+// fresh ingredient worth buying every time.
+
+import { WAITROSE_PRODUCTS, toBaseUnit } from './waitroseProducts.js'
 
 const UNIT_ALIASES = {
   g: 'g', gram: 'g', grams: 'g',
@@ -71,7 +76,8 @@ function singularize(word) {
 }
 
 // The key used to decide two ingredients are "the same" for merging —
-// deliberately fuzzier than a plain lowercase/trim.
+// deliberately fuzzier than a plain lowercase/trim. Also doubles as the
+// lookup key into WAITROSE_PRODUCTS below.
 function canonicalKey(name) {
   const stripped = stripQualifiers(name)
   return stripped.split(' ').filter(Boolean).map(singularize).join(' ')
@@ -99,6 +105,7 @@ const CATEGORY_RULES = [
       'paprika', 'cumin', 'turmeric', 'cinnamon', 'nutmeg', 'clove', 'cayenne',
       'chili powder', 'chilli powder', 'oregano', 'dried basil', 'thyme',
       'rosemary', 'sage', 'dill', 'bay leaf', 'spice', 'seasoning', 'powder',
+      'vanilla extract',
     ],
   },
   {
@@ -132,6 +139,10 @@ const CATEGORY_RULES = [
       'pumpkin', 'fruit', 'vegetable', 'herb',
     ],
   },
+  {
+    category: 'Baking & Nuts',
+    keywords: ['pecan', 'walnut', 'almond', 'hemp', 'chia', 'coconut'],
+  },
 ]
 
 const CATEGORY_DISPLAY_ORDER = [
@@ -141,6 +152,7 @@ const CATEGORY_DISPLAY_ORDER = [
   'Bakery',
   'Frozen',
   'Pantry & Dry Goods',
+  'Baking & Nuts',
   'Herbs & Spices',
   'Other',
 ]
@@ -151,6 +163,24 @@ function categorize(name) {
     if (rule.keywords.some((k) => lower.includes(k))) return rule.category
   }
   return 'Other'
+}
+
+// Works out how many packs of the matched Waitrose product to add to the
+// basket, when the recipe's unit lets us do that safely. Returns null when
+// we can't (a volumetric unit like tsp/cup against a gram pack, etc.) — in
+// that case the shopping list just shows the product name next to the
+// recipe's own quantity instead of a pack count.
+function packsNeeded(product, quantity, unit) {
+  if (!product || product.sold !== 'packed' || quantity === null || !product.packSize) return null
+  if (product.packUnit === 'g' || product.packUnit === 'ml') {
+    const base = toBaseUnit(quantity, unit)
+    if (base === null) return null
+    return Math.ceil(base / product.packSize)
+  }
+  // count-based pack units: 'each', 'clove', 'head'...
+  const u = (unit || '').toLowerCase()
+  const matchesCountUnit = !unit ? product.packUnit === 'each' : u === product.packUnit || u.includes(product.packUnit)
+  return matchesCountUnit ? Math.ceil(quantity / product.packSize) : null
 }
 
 /**
@@ -172,6 +202,7 @@ export function buildShoppingList(recipes) {
         groups.set(nameKey, {
           displayName: titleCase(ing.name.trim()),
           category: categorize(ing.name),
+          waitrose: WAITROSE_PRODUCTS[nameKey] || null,
           lines: new Map(),
         })
       }
@@ -192,10 +223,20 @@ export function buildShoppingList(recipes) {
       key,
       displayName: group.displayName,
       category: group.category,
+      staple: group.waitrose ? group.waitrose.staple : null,
       lines: Array.from(group.lines.values()).map((line) => ({
         quantity: line.quantity,
         unit: line.unit,
         sources: Array.from(line.sources),
+        waitrose: group.waitrose
+          ? {
+              product: group.waitrose.product,
+              staple: group.waitrose.staple,
+              sold: group.waitrose.sold,
+              note: group.waitrose.note || null,
+              packs: packsNeeded(group.waitrose, line.quantity, line.unit),
+            }
+          : null,
       })),
     }))
     .sort((a, b) => {
@@ -221,7 +262,9 @@ export function shoppingListToText(list) {
     for (const item of items) {
       for (const line of item.lines) {
         const qty = line.quantity !== null ? `${roundQty(line.quantity)}${line.unit ? line.unit : ''} ` : ''
-        lines.push(`- ${qty}${item.displayName}`)
+        const w = line.waitrose
+        const waitroseNote = w ? (w.packs ? ` — ${w.packs} x ${w.product}` : ` — ${w.product}`) : ''
+        lines.push(`- ${qty}${item.displayName}${waitroseNote}`)
       }
     }
     lines.push('')

@@ -4,6 +4,10 @@
 // generate a new one) for each day/meal slot, and see how the day's picks
 // stack up against BOTH Jennifer's and Dino's daily macro targets, side
 // by side, at once — no toggling between the two.
+//
+// "Eat out" isn't left untracked: it's counted as each person hitting
+// their own per-meal macro target for that slot, so the day's bars still
+// fill up sensibly even on a night nobody's eating a tracked recipe.
 
 import { useMemo, useState } from 'react'
 import { PEOPLE, DAYS, COOK_DAYS, MEALS, favoritesFor, EAT_OUT } from '../lib/mealPlanData.js'
@@ -12,6 +16,7 @@ import MacroBar from './MacroBar.jsx'
 const EMPTY = ''
 const EATOUT = 'eatout'
 const GENERATE = 'generate'
+const PERSON_KEYS = Object.keys(PEOPLE)
 
 // Used only to size the "Generate a new recipe" request — a blended
 // midpoint of both people's per-meal budgets, since the dish itself is
@@ -31,6 +36,10 @@ function emptySchedule() {
 
 function findFavorite(meal, id) {
   return favoritesFor(meal).find((r) => r.id === id) || null
+}
+
+function emptyMacros() {
+  return { calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0 }
 }
 
 export default function WeeklySchedule({ onAddToShoppingList }) {
@@ -74,36 +83,56 @@ export default function WeeklySchedule({ onAddToShoppingList }) {
     }
   }
 
+  // Per-person daily totals. A shared recipe's macros count once for each
+  // person (they're both eating the same dish); "Eat out" instead adds
+  // that person's own per-meal target (their daily target ÷ 3), since
+  // there's no shared dish to attribute macros from.
   const dayTotals = useMemo(() => {
     const totals = {}
     for (const day of DAYS) {
-      const sum = { calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0 }
-      let hasUntracked = false
+      const perPerson = {}
+      for (const key of PERSON_KEYS) perPerson[key] = emptyMacros()
+
       for (const meal of MEALS) {
         const r = recipeForCell(day, meal)
-        const m = r?.macros_per_serving
-        if (!m || m.calories === null) {
-          if (r) hasUntracked = true
+        if (!r) continue
+
+        if (r.id === 'eatout') {
+          for (const key of PERSON_KEYS) {
+            const t = PEOPLE[key].target
+            perPerson[key].calories += t.calories / 3
+            perPerson[key].protein_g += t.protein_g / 3
+            perPerson[key].carbs_g += t.carbs_g / 3
+            perPerson[key].fat_g += t.fat_g / 3
+          }
           continue
         }
-        sum.calories += m.calories
-        sum.protein_g += m.protein_g
-        sum.carbs_g += m.carbs_g
-        sum.fat_g += m.fat_g
+
+        const m = r.macros_per_serving
+        if (!m || m.calories === null || m.calories === undefined) continue
+        for (const key of PERSON_KEYS) {
+          perPerson[key].calories += m.calories
+          perPerson[key].protein_g += m.protein_g
+          perPerson[key].carbs_g += m.carbs_g
+          perPerson[key].fat_g += m.fat_g
+        }
       }
-      totals[day] = { ...sum, hasUntracked }
+      totals[day] = perPerson
     }
     return totals
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [schedule, generated])
 
   const weekTotal = useMemo(() => {
-    const sum = { calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0 }
+    const sum = {}
+    for (const key of PERSON_KEYS) sum[key] = emptyMacros()
     for (const day of DAYS) {
-      sum.calories += dayTotals[day].calories
-      sum.protein_g += dayTotals[day].protein_g
-      sum.carbs_g += dayTotals[day].carbs_g
-      sum.fat_g += dayTotals[day].fat_g
+      for (const key of PERSON_KEYS) {
+        sum[key].calories += dayTotals[day][key].calories
+        sum[key].protein_g += dayTotals[day][key].protein_g
+        sum[key].carbs_g += dayTotals[day][key].carbs_g
+        sum[key].fat_g += dayTotals[day][key].fat_g
+      }
     }
     return sum
   }, [dayTotals])
@@ -151,19 +180,16 @@ export default function WeeklySchedule({ onAddToShoppingList }) {
 
               <div className="schedule-totals">
                 <div className="schedule-totals-people">
-                  {Object.entries(PEOPLE).map(([key, p]) => (
+                  {PERSON_KEYS.map((key) => (
                     <div className="person-totals" key={key}>
-                      <p className="person-totals-name">{p.name}</p>
-                      <MacroBar label="Protein" value={totals.protein_g} target={p.target.protein_g} />
-                      <MacroBar label="Carbs" value={totals.carbs_g} target={p.target.carbs_g} />
-                      <MacroBar label="Fat" value={totals.fat_g} target={p.target.fat_g} />
+                      <p className="person-totals-name">{PEOPLE[key].name}</p>
+                      <p className="muted schedule-kcal">{Math.round(totals[key].calories)} kcal</p>
+                      <MacroBar label="Protein" value={totals[key].protein_g} target={PEOPLE[key].target.protein_g} />
+                      <MacroBar label="Carbs" value={totals[key].carbs_g} target={PEOPLE[key].target.carbs_g} />
+                      <MacroBar label="Fat" value={totals[key].fat_g} target={PEOPLE[key].target.fat_g} />
                     </div>
                   ))}
                 </div>
-                <p className="muted schedule-kcal">
-                  {Math.round(totals.calories)} kcal
-                  {totals.hasUntracked ? ' + eating out (untracked)' : ''}
-                </p>
               </div>
             </div>
           )
@@ -172,17 +198,19 @@ export default function WeeklySchedule({ onAddToShoppingList }) {
 
       <div className="panel schedule-week-summary">
         <div className="row" style={{ justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
-          <div>
+          <div className="week-summary-people">
             <strong>Week total</strong>
-            <p className="muted" style={{ margin: '4px 0 0' }}>
-              {Math.round(weekTotal.calories)} kcal · {Math.round(weekTotal.protein_g)}g protein ·{' '}
-              {Math.round(weekTotal.carbs_g)}g carbs · {Math.round(weekTotal.fat_g)}g fat
-            </p>
-            <p className="muted" style={{ margin: '4px 0 0', fontSize: 12 }}>
-              Jennifer's 7-day target: {PEOPLE.jennifer.target.protein_g * 7}p · {PEOPLE.jennifer.target.carbs_g * 7}c ·{' '}
-              {PEOPLE.jennifer.target.fat_g * 7}f &nbsp;|&nbsp; Dino's: {PEOPLE.dino.target.protein_g * 7}p ·{' '}
-              {PEOPLE.dino.target.carbs_g * 7}c · {PEOPLE.dino.target.fat_g * 7}f
-            </p>
+            {PERSON_KEYS.map((key) => {
+              const t = PEOPLE[key].target
+              const w = weekTotal[key]
+              return (
+                <p className="muted" style={{ margin: '4px 0 0' }} key={key}>
+                  <strong className="week-summary-name">{PEOPLE[key].name}:</strong> {Math.round(w.calories)} kcal ·{' '}
+                  {Math.round(w.protein_g)}g protein · {Math.round(w.carbs_g)}g carbs · {Math.round(w.fat_g)}g fat{' '}
+                  (target: {t.calories * 7} kcal · {t.protein_g * 7}g · {t.carbs_g * 7}g · {t.fat_g * 7}g)
+                </p>
+              )
+            })}
           </div>
           <button onClick={addWeekToShoppingList}>Add this week's picks to shopping list</button>
         </div>
@@ -216,7 +244,7 @@ function MealCell({ meal, value, recipe, generatedState, onChange }) {
           {Math.round(m.calories)} kcal · {m.protein_g}p · {m.carbs_g}c · {m.fat_g}f
         </p>
       )}
-      {value === EATOUT && <p className="muted meal-cell-note">Not tracked</p>}
+      {value === EATOUT && <p className="muted meal-cell-note">Counted at each person's own per-meal target</p>}
     </div>
   )
 }
