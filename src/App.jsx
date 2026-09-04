@@ -20,7 +20,11 @@ export default function App() {
   function addRecipes(newRecipes, selected = false) {
     setRecipes((rs) => [
       ...rs,
-      ...newRecipes.map((r) => ({ ...r, id: nextId++, selected, desiredServings: r.servings || 1 })),
+      // Weekly Schedule passes its own computed desiredServings (how many
+      // real portions the week's picks need, given how often a dish is
+      // scheduled and each person's macro-matched portion size) — respect
+      // that instead of resetting to the recipe's own default serving count.
+      ...newRecipes.map((r) => ({ ...r, id: nextId++, selected, desiredServings: r.desiredServings ?? (r.servings || 1) })),
     ])
   }
 

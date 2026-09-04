@@ -5,9 +5,17 @@
 // stack up against BOTH Jennifer's and Dino's daily macro targets, side
 // by side, at once — no toggling between the two.
 //
-// "Eat out" isn't left untracked: it's counted as each person hitting
-// their own per-meal macro target for that slot, so the day's bars still
-// fill up sensibly even on a night nobody's eating a tracked recipe.
+// Two things are NOT flat "1 serving each":
+//  - "Eat out" is counted as each person hitting their own per-meal macro
+//    target for that slot (their daily target ÷ 3), not a shared dish.
+//  - A shared recipe is portioned differently per person — Dino generally
+//    needs more of the same dish than Jennifer to hit his higher protein
+//    target, so each person's serving size is scaled to their own
+//    per-meal protein target (clamped to a sane 0.5x–2.5x range so a
+//    low-protein treat like banana bread doesn't get scaled absurdly).
+//    That per-person portion size is what drives both the macro totals
+//    below AND how many total servings to buy for when picks are sent to
+//    the shopping list.
 
 import { useMemo, useState } from 'react'
 import { PEOPLE, DAYS, COOK_DAYS, MEALS, favoritesFor, EAT_OUT } from '../lib/mealPlanData.js'
@@ -17,10 +25,12 @@ const EMPTY = ''
 const EATOUT = 'eatout'
 const GENERATE = 'generate'
 const PERSON_KEYS = Object.keys(PEOPLE)
+const MIN_MULTIPLIER = 0.5
+const MAX_MULTIPLIER = 2.5
 
 // Used only to size the "Generate a new recipe" request — a blended
 // midpoint of both people's per-meal budgets, since the dish itself is
-// shared and portions are adjusted by eye afterwards.
+// shared and portions are adjusted per person afterwards.
 const GENERATE_TARGET = {
   calories: Math.round((PEOPLE.jennifer.target.calories + PEOPLE.dino.target.calories) / 2 / 3),
   protein_g: Math.round((PEOPLE.jennifer.target.protein_g + PEOPLE.dino.target.protein_g) / 2 / 3),
@@ -40,6 +50,24 @@ function findFavorite(meal, id) {
 
 function emptyMacros() {
   return { calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0 }
+}
+
+// How many recipe-servings of this dish `personKey` should eat to hit
+// their own per-meal protein target, rounded to the nearest quarter
+// serving and clamped to a sane range. Protein-anchored because every
+// recipe here was designed around a single protein source, and protein is
+// the macro Jennifer's plan is built around hitting first.
+function proteinMultiplier(recipe, personKey) {
+  const m = recipe?.macros_per_serving
+  if (!m || !m.protein_g) return 1
+  const perMealProtein = PEOPLE[personKey].target.protein_g / 3
+  const raw = perMealProtein / m.protein_g
+  const clamped = Math.min(MAX_MULTIPLIER, Math.max(MIN_MULTIPLIER, raw))
+  return Math.round(clamped * 4) / 4
+}
+
+function formatMultiplier(n) {
+  return Number.isInteger(n) ? `${n}` : `${n}`
 }
 
 export default function WeeklySchedule({ onAddToShoppingList }) {
@@ -83,10 +111,11 @@ export default function WeeklySchedule({ onAddToShoppingList }) {
     }
   }
 
-  // Per-person daily totals. A shared recipe's macros count once for each
-  // person (they're both eating the same dish); "Eat out" instead adds
-  // that person's own per-meal target (their daily target ÷ 3), since
-  // there's no shared dish to attribute macros from.
+  // Per-person daily totals. A shared recipe counts once per person, but
+  // scaled by that person's own portion multiplier (see proteinMultiplier
+  // above) rather than a flat identical serving; "Eat out" adds that
+  // person's own per-meal target instead, since there's no shared dish to
+  // portion.
   const dayTotals = useMemo(() => {
     const totals = {}
     for (const day of DAYS) {
@@ -111,10 +140,11 @@ export default function WeeklySchedule({ onAddToShoppingList }) {
         const m = r.macros_per_serving
         if (!m || m.calories === null || m.calories === undefined) continue
         for (const key of PERSON_KEYS) {
-          perPerson[key].calories += m.calories
-          perPerson[key].protein_g += m.protein_g
-          perPerson[key].carbs_g += m.carbs_g
-          perPerson[key].fat_g += m.fat_g
+          const mult = proteinMultiplier(r, key)
+          perPerson[key].calories += m.calories * mult
+          perPerson[key].protein_g += m.protein_g * mult
+          perPerson[key].carbs_g += m.carbs_g * mult
+          perPerson[key].fat_g += m.fat_g * mult
         }
       }
       totals[day] = perPerson
@@ -137,18 +167,31 @@ export default function WeeklySchedule({ onAddToShoppingList }) {
     return sum
   }, [dayTotals])
 
+  // Total real servings needed of each favorite for the week: every time
+  // it's scheduled, both people eat their own portion-multiplier's worth
+  // of it, so the batch needs to cover the sum of both — not just "however
+  // many the recipe happens to default to".
   function addWeekToShoppingList() {
-    const picked = new Map() // favorite id -> recipe
+    const picked = new Map() // favorite id -> { recipe, servings }
     for (const day of DAYS) {
       for (const meal of MEALS) {
         const value = schedule[day][meal]
-        if (value && value.startsWith('fav:')) {
-          const r = findFavorite(meal, value.slice(4))
-          if (r) picked.set(r.id, r)
-        }
+        if (!value || !value.startsWith('fav:')) continue
+        const r = findFavorite(meal, value.slice(4))
+        if (!r) continue
+        const entry = picked.get(r.id) || { recipe: r, servings: 0 }
+        for (const key of PERSON_KEYS) entry.servings += proteinMultiplier(r, key)
+        picked.set(r.id, entry)
       }
     }
-    if (picked.size > 0) onAddToShoppingList(Array.from(picked.values()))
+    if (picked.size > 0) {
+      onAddToShoppingList(
+        Array.from(picked.values()).map(({ recipe, servings }) => ({
+          ...recipe,
+          desiredServings: Math.round(servings * 4) / 4,
+        }))
+      )
+    }
   }
 
   return (
@@ -222,6 +265,7 @@ export default function WeeklySchedule({ onAddToShoppingList }) {
 function MealCell({ meal, value, recipe, generatedState, onChange }) {
   const options = favoritesFor(meal)
   const m = recipe?.macros_per_serving
+  const isSharedDish = recipe && recipe.id !== 'eatout' && m?.calories !== null && m?.calories !== undefined
   return (
     <div className="meal-cell">
       <label className="meal-cell-label">{meal}</label>
@@ -238,10 +282,15 @@ function MealCell({ meal, value, recipe, generatedState, onChange }) {
 
       {value === GENERATE && generatedState === 'loading' && <p className="muted meal-cell-note">Asking Claude…</p>}
       {value === GENERATE && generatedState === 'error' && <p className="error meal-cell-note">Couldn't generate one — try again.</p>}
-      {recipe && recipe.id !== 'eatout' && m?.calories !== null && m?.calories !== undefined && (
+      {isSharedDish && (
         <p className="muted meal-cell-note">
           {recipe.title !== undefined && value === GENERATE ? `${recipe.title} — ` : ''}
-          {Math.round(m.calories)} kcal · {m.protein_g}p · {m.carbs_g}c · {m.fat_g}f
+          {Math.round(m.calories)} kcal · {m.protein_g}p · {m.carbs_g}c · {m.fat_g}f <span className="muted">/ serving</span>
+        </p>
+      )}
+      {isSharedDish && (
+        <p className="muted meal-cell-note portion-note">
+          {PERSON_KEYS.map((key) => `${PEOPLE[key].name} ${formatMultiplier(proteinMultiplier(recipe, key))}×`).join(' · ')}
         </p>
       )}
       {value === EATOUT && <p className="muted meal-cell-note">Counted at each person's own per-meal target</p>}
