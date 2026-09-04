@@ -3,23 +3,24 @@ import LinkForm from './components/LinkForm.jsx'
 import MacroForm from './components/MacroForm.jsx'
 import RecipeCard from './components/RecipeCard.jsx'
 import ShoppingListPanel from './components/ShoppingListPanel.jsx'
+import WeeklySchedule from './components/WeeklySchedule.jsx'
 import { buildShoppingList } from './lib/shoppingList.js'
 import './App.css'
 
 let nextId = 1
 
 export default function App() {
-  const [mode, setMode] = useState('link') // 'link' | 'browse'
+  const [mode, setMode] = useState('link') // 'link' | 'browse' | 'schedule'
   const [recipes, setRecipes] = useState([])
 
   function addRecipe(recipe, selected = true) {
     setRecipes((rs) => [...rs, { ...recipe, id: nextId++, selected, desiredServings: recipe.servings || 1 }])
   }
 
-  function addRecipes(newRecipes) {
+  function addRecipes(newRecipes, selected = false) {
     setRecipes((rs) => [
       ...rs,
-      ...newRecipes.map((r) => ({ ...r, id: nextId++, selected: false, desiredServings: r.servings || 1 })),
+      ...newRecipes.map((r) => ({ ...r, id: nextId++, selected, desiredServings: r.servings || 1 })),
     ])
   }
 
@@ -63,13 +64,14 @@ export default function App() {
         <button className={mode === 'browse' ? 'active' : ''} onClick={() => setMode('browse')}>
           Browse by macros
         </button>
+        <button className={mode === 'schedule' ? 'active' : ''} onClick={() => setMode('schedule')}>
+          Weekly schedule
+        </button>
       </div>
 
-      {mode === 'link' ? (
-        <LinkForm onRecipe={(r) => addRecipe(r, true)} />
-      ) : (
-        <MacroForm onRecipes={addRecipes} />
-      )}
+      {mode === 'link' && <LinkForm onRecipe={(r) => addRecipe(r, true)} />}
+      {mode === 'browse' && <MacroForm onRecipes={addRecipes} />}
+      {mode === 'schedule' && <WeeklySchedule onAddToShoppingList={(rs) => addRecipes(rs, true)} />}
 
       {recipes.length > 0 && (
         <section>
