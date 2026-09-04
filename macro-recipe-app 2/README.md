@@ -89,6 +89,22 @@ since the site is connected to that repo.
 - Ingredient merging doesn't do unit conversion — "200g chicken" and "0.5lb
   chicken" will show as two separate lines rather than one combined amount.
   Good enough for a shopping list; just eyeball it.
+- Ingredient matching is fuzzy on purpose: it strips common descriptor words
+  (skinless, boneless, fresh, organic, diced, low-fat, etc.) and naively
+  singularizes ("tomatoes" → "tomato") before deciding two ingredient names
+  are "the same" for merging. So "skinless chicken breast" and "chicken
+  breast" merge into one shopping-list line, but it's a heuristic, not a
+  real ingredient database — an unusual name or a typo can occasionally
+  fail to match something it should (or, rarely, over-merge two things
+  that aren't quite the same).
+- Grocery categories (Fruits & Vegetables, Meat/Poultry & Fish, Dairy &
+  Eggs, Bakery, Frozen, Pantry & Dry Goods, Herbs & Spices) are assigned
+  by keyword matching on the ingredient name, checked in a fixed priority
+  order (e.g. spice/pantry keywords are checked before produce keywords,
+  so "avocado oil" lands in Pantry rather than Fruits & Vegetables).
+  Anything that doesn't match a known keyword is filed under "Other." This
+  will occasionally misfile an uncommon ingredient — just move it mentally
+  when you're shopping.
 - Macro estimates for browsed (non-linked) recipes are Claude's estimate,
   not lab-measured nutrition data — treat them as "close enough for weekly
   planning," not precise.
