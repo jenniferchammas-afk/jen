@@ -26,11 +26,11 @@
 export const WAITROSE_PRODUCTS = {
   // --- Proteins ---
   'chicken breast': { product: 'Al Khazna Fresh Chicken Breast', packSize: 500, packUnit: 'g', sold: 'packed', staple: false },
-  'salmon fillet': { product: 'Scottish Salmon Fillet', packSize: 200, packUnit: 'g', sold: 'packed', staple: false },
-  'flank steak': { product: 'FineFood Grass Fed Beef Rump Steak', packSize: 250, packUnit: 'g', sold: 'packed', staple: false, note: 'Closest local match — flank steak itself isn\'t stocked; rump steak stir-fries the same way.' },
+  'salmon fillet': { product: 'Scottish Salmon Fillet', packSize: null, packUnit: 'g', sold: 'loose', staple: false },
+  'flank steak': { product: 'FineFood Grass Fed Beef Rump Steak', packSize: null, packUnit: 'g', sold: 'loose', staple: false, note: 'Closest local match — flank steak itself isn\'t stocked; rump steak stir-fries the same way.' },
   turkey: { product: 'Finefood Turkey Mince', packSize: 500, packUnit: 'g', sold: 'packed', staple: false },
   beef: { product: 'Fine Food Lean Beef Mince 11%', packSize: 500, packUnit: 'g', sold: 'packed', staple: false, note: '89% lean — closest packaged option to the 93%-lean called for.' },
-  egg: { product: 'Al Jazira Large White Eggs', packSize: 6, packUnit: 'each', sold: 'packed', staple: false },
+  egg: { product: 'Fine Food Large Free Range Eggs', packSize: 10, packUnit: 'each', sold: 'packed', staple: false },
   'egg white': { product: 'Egg Station Liquid Egg White', packSize: 500, packUnit: 'ml', sold: 'packed', staple: false },
 
   // --- Dairy & cheese ---
@@ -40,7 +40,7 @@ export const WAITROSE_PRODUCTS = {
   'nonfat greek yogurt': { product: 'Waitrose Greek 0% Fat Yogurt', packSize: 500, packUnit: 'g', sold: 'packed', staple: false },
 
   // --- Fresh produce ---
-  cauliflower: { product: 'Waitrose Cauliflower Head (~700g)', packSize: 1, packUnit: 'head', sold: 'packed', staple: false },
+  cauliflower: { product: 'Waitrose Loose Cauliflower', packSize: null, packUnit: 'g', sold: 'loose', staple: false },
   lemon: { product: 'Lemon South Africa', packSize: null, packUnit: 'g', sold: 'loose', staple: false },
   lime: { product: 'Waitrose Loose Green Lime Seedless Brazil', packSize: null, packUnit: 'g', sold: 'loose', staple: false },
   'red bell pepper': { product: 'Levart Mixed Bell Pepper (Capsicum)', packSize: 400, packUnit: 'g', sold: 'packed', staple: false, note: 'Already a mixed red/green pack — usually covers the green bell pepper line below too, so check before doubling up.' },
@@ -49,12 +49,15 @@ export const WAITROSE_PRODUCTS = {
   'red onion': { product: 'Waitrose Loose Red Onion Spain', packSize: null, packUnit: 'g', sold: 'loose', staple: false },
   garlic: { product: 'Waitrose Loose Jumbo Garlic Spain', packSize: 10, packUnit: 'clove', sold: 'packed', staple: true, note: '1 bulb ≈ 10 cloves.' },
   lettuce: { product: 'Spanish Iceberg Lettuce - Fresh, Crisp, Whole Head', packSize: 1, packUnit: 'head', sold: 'packed', staple: false },
-  broccoli: { product: 'Broccoli Holland', packSize: null, packUnit: 'g', sold: 'loose', staple: false },
+  broccoli: { product: 'Waitrose Loose Broccoli Spain', packSize: null, packUnit: 'g', sold: 'loose', staple: false },
   ginger: { product: 'Waitrose Fresh Ginger', packSize: null, packUnit: 'g', sold: 'loose', staple: true },
   potato: { product: 'Syrian Potatoes', packSize: null, packUnit: 'g', sold: 'loose', staple: false },
   'green bean': { product: 'Waitrose Trimmed Fine Green Beans Kenya', packSize: 200, packUnit: 'g', sold: 'packed', staple: false },
   tomato: { product: 'Waitrose Loose Tomato UAE', packSize: null, packUnit: 'g', sold: 'loose', staple: false },
   coriander: { product: 'Waitrose Fresh Coriander (Cilantro) Kenya', packSize: 100, packUnit: 'g', sold: 'packed', staple: false },
+  'mixed bell pepper': { product: 'Levart Mixed Bell Pepper (Capsicum)', packSize: 400, packUnit: 'g', sold: 'packed', staple: false },
+  avocado: { product: 'Fine Food Ripe and Ready Avocado 2 Pack', packSize: 2, packUnit: 'each', sold: 'packed', staple: false },
+  kiwi: { product: 'Green Kiwi New Zealand', packSize: null, packUnit: 'g', sold: 'loose', staple: false },
   spinach: { product: 'Fine Food Organic Baby Spinach', packSize: 100, packUnit: 'g', sold: 'packed', staple: false },
   banana: { product: 'Chiquita Banana Ecuador', packSize: null, packUnit: 'g', sold: 'loose', staple: false },
   berry: { product: 'Fine Food Fresh Mix Berries', packSize: 260, packUnit: 'g', sold: 'packed', staple: false },

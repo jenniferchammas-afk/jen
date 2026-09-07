@@ -191,8 +191,15 @@ export function buildShoppingList(recipes) {
   const groups = new Map() // canonicalKey -> { displayName, category, lines: Map(unit -> {quantity, sources: Set}) }
 
   for (const recipe of recipes) {
-    const multiplier = recipe.multiplier || 1
-    for (const ing of recipe.ingredients || []) {
+    // A recipe can carry a fixed `shoppingBatch` — the real quantities
+    // Jennifer and Mira actually buy for that dish (sized for 3 eaters
+    // plus leftovers, not just the tracked macro servings). When present,
+    // use it as-is instead of scaling the recipe's tracked ingredients by
+    // however many servings the schedule computed.
+    const usingFixedBatch = Array.isArray(recipe.shoppingBatch)
+    const ingredientList = usingFixedBatch ? recipe.shoppingBatch : recipe.ingredients || []
+    const multiplier = usingFixedBatch ? 1 : recipe.multiplier || 1
+    for (const ing of ingredientList) {
       if (!ing.name) continue
       const nameKey = canonicalKey(ing.name)
       const unitKey = normalizeUnit(ing.unit)

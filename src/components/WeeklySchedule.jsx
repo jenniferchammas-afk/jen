@@ -8,14 +8,14 @@
 // Two things are NOT flat "1 serving each":
 //  - "Eat out" is counted as each person hitting their own per-meal macro
 //    target for that slot (their daily target ÷ 3), not a shared dish.
-//  - A shared recipe is portioned differently per person — Dino generally
-//    needs more of the same dish than Jennifer to hit his higher protein
-//    target, so each person's serving size is scaled to their own
-//    per-meal protein target (clamped to a sane 0.5x–2.5x range so a
-//    low-protein treat like banana bread doesn't get scaled absurdly).
-//    That per-person portion size is what drives both the macro totals
-//    below AND how many total servings to buy for when picks are sent to
-//    the shopping list.
+//  - A shared recipe is portioned differently per person, sized to
+//    whichever of protein/carbs/fat is the MOST restrictive for that
+//    person on that dish (not protein alone) — so a higher-fat dish like
+//    salmon scales down rather than blowing past the fat target just
+//    because it would otherwise hit the protein target. Clamped to a sane
+//    0.5x–2.5x range as a backstop. That per-person portion size is what
+//    drives both the macro totals below AND how many total servings to
+//    buy for when picks are sent to the shopping list.
 
 import { useMemo, useState } from 'react'
 import { PEOPLE, DAYS, COOK_DAYS, MEALS, favoritesFor, EAT_OUT } from '../lib/mealPlanData.js'
@@ -52,22 +52,30 @@ function emptyMacros() {
   return { calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0 }
 }
 
-// How many recipe-servings of this dish `personKey` should eat to hit
-// their own per-meal protein target, rounded to the nearest quarter
-// serving and clamped to a sane range. Protein-anchored because every
-// recipe here was designed around a single protein source, and protein is
-// the macro Jennifer's plan is built around hitting first.
-function proteinMultiplier(recipe, personKey) {
+// How many recipe-servings of this dish `personKey` should eat, rounded to
+// the nearest quarter serving. Checks protein, carbs AND fat against that
+// person's own per-meal target and takes the SMALLEST of the three ratios
+// — the most restrictive macro — so scaling up for protein never pushes
+// carbs or fat over target. (Scaling by protein alone was the bug: salmon
+// has plenty of protein per serving but is also the fattiest dish, so a
+// protein-only multiplier pushed both people over their fat target.)
+// Clamped to 0.5x–2.5x as a backstop against a low-protein treat like
+// banana bread scaling absurdly high.
+function portionMultiplier(recipe, personKey) {
   const m = recipe?.macros_per_serving
   if (!m || !m.protein_g) return 1
-  const perMealProtein = PEOPLE[personKey].target.protein_g / 3
-  const raw = perMealProtein / m.protein_g
+  const target = PEOPLE[personKey].target
+  const ratios = []
+  if (m.protein_g) ratios.push(target.protein_g / 3 / m.protein_g)
+  if (m.carbs_g) ratios.push(target.carbs_g / 3 / m.carbs_g)
+  if (m.fat_g) ratios.push(target.fat_g / 3 / m.fat_g)
+  const raw = ratios.length ? Math.min(...ratios) : 1
   const clamped = Math.min(MAX_MULTIPLIER, Math.max(MIN_MULTIPLIER, raw))
   return Math.round(clamped * 4) / 4
 }
 
 function formatMultiplier(n) {
-  return Number.isInteger(n) ? `${n}` : `${n}`
+  return `${n}`
 }
 
 export default function WeeklySchedule({ onAddToShoppingList }) {
@@ -140,7 +148,7 @@ export default function WeeklySchedule({ onAddToShoppingList }) {
         const m = r.macros_per_serving
         if (!m || m.calories === null || m.calories === undefined) continue
         for (const key of PERSON_KEYS) {
-          const mult = proteinMultiplier(r, key)
+          const mult = portionMultiplier(r, key)
           perPerson[key].calories += m.calories * mult
           perPerson[key].protein_g += m.protein_g * mult
           perPerson[key].carbs_g += m.carbs_g * mult
@@ -180,7 +188,7 @@ export default function WeeklySchedule({ onAddToShoppingList }) {
         const r = findFavorite(meal, value.slice(4))
         if (!r) continue
         const entry = picked.get(r.id) || { recipe: r, servings: 0 }
-        for (const key of PERSON_KEYS) entry.servings += proteinMultiplier(r, key)
+        for (const key of PERSON_KEYS) entry.servings += portionMultiplier(r, key)
         picked.set(r.id, entry)
       }
     }
@@ -290,7 +298,7 @@ function MealCell({ meal, value, recipe, generatedState, onChange }) {
       )}
       {isSharedDish && (
         <p className="muted meal-cell-note portion-note">
-          {PERSON_KEYS.map((key) => `${PEOPLE[key].name} ${formatMultiplier(proteinMultiplier(recipe, key))}×`).join(' · ')}
+          {PERSON_KEYS.map((key) => `${PEOPLE[key].name} ${formatMultiplier(portionMultiplier(recipe, key))}×`).join(' · ')}
         </p>
       )}
       {value === EATOUT && <p className="muted meal-cell-note">Counted at each person's own per-meal target</p>}

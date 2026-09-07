@@ -76,16 +76,17 @@ export const BREAKFASTS = [
   },
   {
     id: 'bf-yogurt',
-    title: 'Greek Yoghurt with Berries',
+    title: 'Greek Yoghurt with Berries & Kiwi',
     servings: 1,
     ingredients: [
       { name: 'nonfat plain Greek yogurt', quantity: 6, unit: 'oz' },
       { name: 'berries', quantity: 0.5, unit: 'cup' },
+      { name: 'kiwi', quantity: 1, unit: null },
       { name: 'walnuts', quantity: 1, unit: 'tbsp' },
       { name: 'honey', quantity: 1, unit: 'tbsp' },
     ],
-    macros_per_serving: { calories: 250, protein_g: 19.5, carbs_g: 35.5, fat_g: 4.5, estimated: false },
-    instructions_summary: 'Top yoghurt with berries, walnuts and a drizzle of honey.',
+    macros_per_serving: { calories: 295, protein_g: 20, carbs_g: 45, fat_g: 4.5, estimated: false },
+    instructions_summary: 'Top yoghurt with berries, sliced kiwi, walnuts and a drizzle of honey — whole fresh fruit, not a pre-cut fruit cup.',
     source_url: 'https://www.skinnytaste.com/greek-yogurt-with-berries-nuts-and/',
   },
 ]
@@ -96,21 +97,29 @@ export const BREAKFASTS = [
 // the same way the site flags any AI-estimated (non-lab-tested) recipe.
 export const MAINS = [
   {
-    id: 'main-salmon-quinoa',
-    title: 'Grilled Salmon with Tahini Cauliflower',
+    id: 'main-salmon-broccoli',
+    title: 'Salmon with Broccoli and Cauliflower',
     servings: 4,
     ingredients: [
       { name: 'salmon fillet', quantity: 480, unit: 'g' },
       { name: 'cauliflower', quantity: 1, unit: 'large head' },
-      { name: 'tahini', quantity: 4, unit: 'tsp' },
-      { name: 'olive oil', quantity: 4, unit: 'tsp' },
+      { name: 'broccoli', quantity: 1, unit: 'large head' },
       { name: 'lemon', quantity: 1, unit: null },
-      { name: 'garlic', quantity: 2, unit: 'clove' },
     ],
-    macros_per_serving: { calories: 365, protein_g: 31, carbs_g: 11, fat_g: 23, estimated: true },
+    macros_per_serving: { calories: 320, protein_g: 32, carbs_g: 15, fat_g: 15, estimated: true },
     instructions_summary:
-      'Grill the salmon, roast the cauliflower with a little olive oil, then finish with a thin tahini-lemon drizzle. Salmon carries most of the fat here — a naturally fatty fish, not an added-oil problem — so it pairs best with a leaner dish the same day. Add cooked quinoa or rice on the side for more carbs.',
+      'Grill or roast the salmon, and roast the broccoli and cauliflower alongside with a squeeze of lemon — no added oil needed, the salmon carries its own fat. A simple, low-fuss batch dish. Add cooked quinoa or rice on the side for more carbs.',
     source_url: null,
+    // Jennifer and Mira's actual usual shop for this dish — a bigger batch
+    // than the 4-serving recipe above implies (covers Mira too, plus
+    // leftovers), so the shopping list uses this fixed batch directly
+    // instead of scaling the recipe by servings needed.
+    shoppingBatch: [
+      { name: 'salmon fillet', quantity: 1200, unit: 'g' },
+      { name: 'cauliflower', quantity: 800, unit: 'g' },
+      { name: 'broccoli', quantity: 1150, unit: 'g' },
+      { name: 'lemon', quantity: 600, unit: 'g' },
+    ],
   },
   {
     id: 'main-fajitas',
@@ -124,14 +133,28 @@ export const MAINS = [
       { name: 'lime', quantity: 2, unit: null },
       { name: 'olive oil', quantity: 2, unit: 'tsp' },
       { name: 'lettuce', quantity: 1, unit: 'head' },
-      { name: 'guacamole', quantity: 120, unit: 'g' },
+      { name: 'avocado', quantity: 1, unit: null },
       { name: 'coriander', quantity: 15, unit: 'g' },
       { name: 'cumin', quantity: 2, unit: 'tsp' },
       { name: 'chili powder', quantity: 1, unit: 'tsp' },
     ],
     macros_per_serving: { calories: 285, protein_g: 29, carbs_g: 13, fat_g: 12, estimated: true },
-    instructions_summary: 'Sauté spiced chicken strips with peppers and onion, serve in lettuce cups topped with guacamole and a scatter of fresh coriander — the avocado is the only added fat.',
+    instructions_summary: 'Sauté spiced chicken strips with peppers and onion, serve in lettuce cups topped with fresh guacamole — Mira mashes the avocado with lime and coriander rather than using a store-bought tub.',
     source_url: null,
+    // Jennifer and Mira's actual usual shop for this dish — a bigger batch
+    // than the 4-serving recipe above implies (covers Mira too, plus
+    // leftovers), so the shopping list uses this fixed batch directly
+    // instead of scaling the recipe by servings needed. Staples they
+    // already keep on hand (oil, cumin, chili powder) aren't re-bought
+    // every time, so they're left off this list on purpose.
+    shoppingBatch: [
+      { name: 'coriander', quantity: 100, unit: 'g' },
+      { name: 'chicken breast', quantity: 2000, unit: 'g' },
+      { name: 'mixed bell pepper', quantity: 800, unit: 'g' },
+      { name: 'avocado', quantity: 4, unit: null },
+      { name: 'onion', quantity: 1000, unit: 'g' },
+      { name: 'lime', quantity: 480, unit: 'g' },
+    ],
   },
   {
     id: 'main-beef-broccoli',
